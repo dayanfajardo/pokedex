@@ -6,6 +6,8 @@
 #puente base de datos
 /mongo
 
+.env
+
 # Logs
 logs
 *.log

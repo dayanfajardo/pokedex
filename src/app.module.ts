@@ -1,4 +1,5 @@
 import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 
@@ -6,23 +7,34 @@ import { join } from 'path';
 import { PokemonModule } from './pokemon/pokemon.module';
 import { CommonModule } from './common/common.module';
 import { SeedModule } from './seed/seed.module';
-
+import { EnvConfiguration } from './config/env.config';
+import { JoiValidationSchema } from './config/joi.validation';
 
 @Module({
   imports: [
-    //la palabra modulo siempre va en los imports
-   ServeStaticModule.forRoot({
-   rootPath: join(__dirname,'..','public'),
-   }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [EnvConfiguration],
+      validationSchema: JoiValidationSchema,
+    }),
 
-   //Referencia a nuestra base de datos( Conexion )
-   MongooseModule.forRoot('mongodb://localhost:27017/nest-pokemon'),
+    //Esto es para servir archivos estáticos (como imágenes)
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+    }),
 
+    //Esto es la conexión a la base de datos, ahora correctamente con configService
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        uri: configService.get<string>('mongodb'),
+      }),
+    }),
+
+    // Resto de módulos
     PokemonModule,
-
     CommonModule,
-
-    SeedModule
+    SeedModule,
   ],
 })
 export class AppModule {}

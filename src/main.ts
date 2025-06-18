@@ -1,9 +1,12 @@
+import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
   //Esto antepone la palabra api/v2 de manera global en el controlador de pokemon
   app.setGlobalPrefix('api/v2')
@@ -12,9 +15,15 @@ async function bootstrap() {
     new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
+    transform: true,
+    transformOptions:{
+      enableImplicitConversion: true,
+    }
   })
 );
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = configService.get<number>('port') || 3001;
+  await app.listen(port);
+  console.log(`App running en port ${ process.env.PORT }`)
 }
 bootstrap();
